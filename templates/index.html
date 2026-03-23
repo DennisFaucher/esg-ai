@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ESG AI Search</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #4ade80, #22d3ee);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.5px;
+    }
+
+    header p {
+      color: #94a3b8;
+      margin-top: 0.5rem;
+      font-size: 1rem;
+    }
+
+    .search-box {
+      display: flex;
+      gap: 0.75rem;
+      width: 100%;
+      max-width: 640px;
+      margin-bottom: 2rem;
+    }
+
+    .search-box input {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: #e2e8f0;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-box input:focus {
+      border-color: #4ade80;
+    }
+
+    .search-box button {
+      padding: 0.75rem 1.5rem;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, #4ade80, #22d3ee);
+      color: #0f1117;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+
+    .search-box button:hover:not(:disabled) { opacity: 0.88; }
+    .search-box button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .results {
+      width: 100%;
+      max-width: 860px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 1.5rem;
+      display: none;
+    }
+
+    .card.visible { display: block; }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-perplexity { background: #3b0764; color: #c084fc; border: 1px solid #7e22ce; }
+    .badge-claude     { background: #0c2340; color: #67c6f5; border: 1px solid #1e6fa7; }
+
+    .card-header h2 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #cbd5e1;
+    }
+
+    .card-body {
+      color: #cbd5e1;
+      font-size: 0.95rem;
+      line-height: 1.75;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .citations {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #334155;
+    }
+
+    .citations h3 {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.5rem;
+    }
+
+    .citations ol {
+      padding-left: 1.2rem;
+      font-size: 0.82rem;
+      color: #64748b;
+    }
+
+    .citations ol li { margin-bottom: 0.25rem; }
+    .citations a { color: #4ade80; text-decoration: none; }
+    .citations a:hover { text-decoration: underline; }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.88rem;
+      color: #94a3b8;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #334155;
+      border-top-color: #4ade80;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-card {
+      background: #1e1215;
+      border: 1px solid #7f1d1d;
+      border-radius: 14px;
+      padding: 1.25rem 1.5rem;
+      color: #fca5a5;
+      font-size: 0.95rem;
+      display: none;
+    }
+
+    .error-card.visible { display: block; }
+
+    footer {
+      margin-top: 3rem;
+      font-size: 0.8rem;
+      color: #475569;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>ESG AI Search</h1>
+    <p>Research any company's Environmental, Social &amp; Governance efforts — verified by AI</p>
+  </header>
+
+  <div class="search-box">
+    <input
+      type="text"
+      id="companyInput"
+      placeholder="Enter company name (e.g. Apple, Tesla, Microsoft…)"
+      autocomplete="off"
+    />
+    <button id="searchBtn" onclick="startSearch()">Search</button>
+  </div>
+
+  <div class="results">
+    <div class="error-card" id="errorCard"></div>
+
+    <!-- Perplexity card -->
+    <div class="card" id="perplexityCard">
+      <div class="card-header">
+        <span class="badge badge-perplexity">&#x1F50D; Perplexity</span>
+        <h2>ESG Research Results</h2>
+      </div>
+      <div class="status" id="perplexityStatus">
+        <div class="spinner"></div>
+        <span>Searching Perplexity for ESG data…</span>
+      </div>
+      <div class="card-body" id="perplexityContent" style="display:none;"></div>
+      <div class="citations" id="citationsBlock" style="display:none;">
+        <h3>Sources</h3>
+        <ol id="citationsList"></ol>
+      </div>
+    </div>
+
+    <!-- Claude card -->
+    <div class="card" id="claudeCard">
+      <div class="card-header">
+        <span class="badge badge-claude">&#x2713; Claude</span>
+        <h2>Accuracy Assessment</h2>
+      </div>
+      <div class="status" id="claudeStatus">
+        <div class="spinner"></div>
+        <span>Claude is reviewing the results for accuracy…</span>
+      </div>
+      <div class="card-body" id="claudeContent" style="display:none;"></div>
+    </div>
+  </div>
+
+  <footer>Powered by Perplexity &amp; Claude &nbsp;|&nbsp; ESG AI Search</footer>
+
+  <script>
+    const input = document.getElementById("companyInput");
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") startSearch(); });
+
+    function setVisible(id, visible) {
+      document.getElementById(id).classList.toggle("visible", visible);
+    }
+
+    function startSearch() {
+      const company = input.value.trim();
+      if (!company) { input.focus(); return; }
+
+      // Reset UI
+      setVisible("errorCard", false);
+      setVisible("perplexityCard", false);
+      setVisible("claudeCard", false);
+
+      const perplexityStatus  = document.getElementById("perplexityStatus");
+      const perplexityContent = document.getElementById("perplexityContent");
+      const citationsBlock    = document.getElementById("citationsBlock");
+      const citationsList     = document.getElementById("citationsList");
+      const claudeStatus      = document.getElementById("claudeStatus");
+      const claudeContent     = document.getElementById("claudeContent");
+      const btn               = document.getElementById("searchBtn");
+
+      perplexityStatus.style.display  = "flex";
+      perplexityContent.style.display = "none";
+      citationsBlock.style.display    = "none";
+      claudeStatus.style.display      = "flex";
+      claudeContent.style.display     = "none";
+      perplexityContent.textContent   = "";
+      claudeContent.textContent       = "";
+      citationsList.innerHTML         = "";
+
+      btn.disabled = true;
+
+      const formData = new FormData();
+      formData.append("company", company);
+
+      fetch("/search", { method: "POST", body: formData })
+        .then((res) => {
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+
+          function read() {
+            reader.read().then(({ done, value }) => {
+              if (done) { btn.disabled = false; return; }
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split("\n\n");
+              buffer = lines.pop();
+
+              lines.forEach((line) => {
+                if (!line.startsWith("data: ")) return;
+                let event;
+                try { event = JSON.parse(line.slice(6)); } catch { return; }
+
+                if (event.error) {
+                  document.getElementById("errorCard").textContent = "Error: " + event.error;
+                  setVisible("errorCard", true);
+                  setVisible("perplexityCard", false);
+                  setVisible("claudeCard", false);
+                  btn.disabled = false;
+                  return;
+                }
+
+                if (event.step === "perplexity_start") {
+                  setVisible("perplexityCard", true);
+                }
+
+                if (event.step === "perplexity_done") {
+                  perplexityStatus.style.display  = "none";
+                  perplexityContent.textContent   = event.content;
+                  perplexityContent.style.display = "block";
+
+                  if (event.citations && event.citations.length > 0) {
+                    event.citations.forEach((url, i) => {
+                      const li = document.createElement("li");
+                      const a  = document.createElement("a");
+                      a.href   = url;
+                      a.target = "_blank";
+                      a.rel    = "noopener noreferrer";
+                      a.textContent = url;
+                      li.appendChild(a);
+                      citationsList.appendChild(li);
+                    });
+                    citationsBlock.style.display = "block";
+                  }
+
+                  setVisible("claudeCard", true);
+                }
+
+                if (event.step === "claude_done") {
+                  claudeStatus.style.display  = "none";
+                  claudeContent.textContent   = event.content;
+                  claudeContent.style.display = "block";
+                }
+
+                if (event.step === "complete") {
+                  btn.disabled = false;
+                }
+              });
+
+              read();
+            });
+          }
+          read();
+        })
+        .catch((err) => {
+          document.getElementById("errorCard").textContent = "Network error: " + err.message;
+          setVisible("errorCard", true);
+          btn.disabled = false;
+        });
+    }
+  </script>
+</body>
+</html>
