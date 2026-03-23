@@ -1,6 +1,6 @@
 # ESG AI Search
 
-A web app that researches any company's **Environmental, Social, and Governance (ESG)** efforts using Perplexity AI, then cross-checks the results for accuracy using Claude.
+A web app that researches any company's **Environmental, Social, and Governance (ESG)** efforts using Perplexity AI, then cross-checks the results for accuracy using Claude. (NB: Claude helped me write this)
 
 ## How It Works
 
@@ -19,7 +19,7 @@ A web app that researches any company's **Environmental, Social, and Governance 
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/esg-ai.git
+   git clone https://github.com/DennisFaucher/esg-ai.git
    cd esg-ai
    ```
 
