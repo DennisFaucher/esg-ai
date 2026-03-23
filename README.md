@@ -2,6 +2,9 @@
 
 A web app that researches any company's **Environmental, Social, and Governance (ESG)** efforts using Perplexity AI, then cross-checks the results for accuracy using Claude. (NB: Claude helped me write this)
 
+<img width="881" height="933" alt="image" src="https://github.com/user-attachments/assets/280ba194-b497-4eff-a55f-a99de657d833" />
+
+
 ## How It Works
 
 1. Enter a company name in the search box
